@@ -1,3 +1,4 @@
+raise DeprecationWarning("the frame class is deprecated and will be removed")
 import pickle
 from typing import Any
 import numpy as np

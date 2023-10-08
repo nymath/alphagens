@@ -19,14 +19,21 @@ class MDFIter:
         self.prices = prices
         self.returns = prices.pct_change().fillna(0)
         self.idx = 0
+        self.trade_dates = list(self.data.index.levels[0])
+        self.symbols = list(self.data.index.levels[1])
         self.current_date = None
         self.current_data = None
 
     def next(self):
-        self.current_date = self.data.index.levels[0][self.idx]
+        self.current_date = self.trade_dates[self.idx]
         self.current_data = self.data_list[self.idx]
         self.idx += 1
         return self.current_data
+
+    def reset(self):
+        self.current_data = None
+        self.current_date = None
+        self.idx = 0
 
     @property
     def spot_price(self):
@@ -39,13 +46,11 @@ class MDFIter:
 
 class StockEnv:
     def __init__(self, data: pd.DataFrame, data_list: list[pd.DataFrame], prices: pd.DataFrame):
-        self._data = data
-        self._data_list = data_list
-        self._mdf_iter = MDFIter(data, self._data_list, prices)
-        # self._account = Account(self._mdf_iter)
+        self._iter = MDFIter(data, data_list, prices)
+        self._account = Account(self._iter)
         self._initialized = False
-        self._positions = None
-        self._costs = None
+        self._positions = np.repeat(np.nan, len(self._iter.symbols))
+        self._reward = np.nan
 
     def step(self, 
              action: ActType
@@ -54,35 +59,48 @@ class StockEnv:
 
         if action is not NO_ACTION:
             self._positions = action
-        
-        self._mdf_iter.next()
-        spot_return = self._mdf_iter.spot_return
-        new_positions = self._positions * (1 + spot_return)
-        strategy_return = np.sum(spot_return * self._positions)
-        self._positions = new_positions / np.sum(new_positions)
-        next_state = self._mdf_iter.current_data
 
-        reward = strategy_return
+        self._account.positions_series.loc[self.now] = self._positions
+        self._account.strategy_returns.loc[self.now] = self._reward
+
+        self._iter.next()
+        spot_return = self._iter.spot_return
+        strategy_return = np.sum(spot_return * self._positions)
+        
+        self._positions *= (1 + spot_return)
+        self._positions /= np.sum(self._positions)
+
+        next_state = self._iter.current_data
+        self._reward = strategy_return
         truncated = False
         terminated = False
         info = None
-        return next_state, reward, truncated, terminated, info
+        return next_state, self._reward, truncated, terminated, info
     
     def _update_positions(self):
         pass
 
     @property
     def current_date(self):
-        return self._mdf_iter.current_date
+        return self._iter.current_date
+    
+    @property
+    def now(self):
+        return self._iter.current_date
 
     @property
     def current_data(self):
-        return self._mdf_iter.current_data
+        return self._iter.current_data
     
     def reset(self) -> Tuple[ObsType, dict]:
-        self._mdf_iter.next()
+        self._iter.reset()
+        self._account.reset()
+        self._positions = np.repeat(np.nan, len(self._iter.symbols)) 
+        self._reward = np.nan
+
+        self._iter.next()
         self._initialized = True
-        return self._mdf_iter.current_data, None
+        return self._iter.current_data, None
     
     def spot(self, symbol=None, field=None) -> ObsType:
         # return self.data_iter.spot(symbol, field)
@@ -90,20 +108,23 @@ class StockEnv:
 
 
 class Account:
-    def __init__(self, data_iter: DataIter):
-        self.data_iter = data_iter
-        self.positions = np.repeat(0, len(data_iter.data._symbols))
-        self.costs = None
+    def __init__(self, iter: MDFIter):
+        self._iter = iter
+        self.positions_series = pd.DataFrame(np.nan, index=iter.trade_dates, columns=iter.symbols, dtype=np.float64)
+        self.strategy_returns = pd.Series(np.nan, index=iter.trade_dates)
     
     def rebalance(self, target_positions):
-        price = self.data_iter.spot_price()
-        if self.positions is NO_ACTION:
-            fees = np.nansum(np.abs(target_positions)) 
-        else:
-            fees = np.nansum(np.abs(target_positions - self.positions))
+        price = self._iter.spot_price()
+        pre_positions = self.positions_series.loc[self._pre_trade_date]
+
+        fees = np.nansum(np.abs(target_positions - self.positions))
         self.positions = target_positions
         self.costs = price
         return fees
+    
+    def reset(self):
+        self.positions_series = pd.DataFrame(np.nan, index=self._iter.trade_dates, columns=self._iter.symbols, dtype=np.float64)
+        self.strategy_returns = pd.Series(np.nan, index=self._iter.trade_dates) 
     
     def update(self):
         pass

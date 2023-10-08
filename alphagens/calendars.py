@@ -5,12 +5,13 @@ from pandas_market_calendars import get_calendar as calendar_template
 import typing
 import numpy as np
 from collections import defaultdict
-from .types import DateLike
+DateLike = typing.Union[pd.Timestamp, str, int, float, datetime.datetime]
 
 GLOBAL_DEFAULT_START = pd.Timestamp('2005-01-04')
 GLOBAL_DEFAULT_END = pd.Timestamp.now().floor("D") + pd.DateOffset(years=1)
 
 NANOSECONDS_PER_MINUTE = int(6e10)
+
 
 def convert_date_to_int(dt):
     t = dt.year * 10000 + dt.month * 100 + dt.day
@@ -186,15 +187,17 @@ class XSHGExchangeCalendar(object):
 
         After finding the proper date, we perform the shift operation.
         """
+        dt = pd.to_datetime(dt)
         dt_revision_index = self.find(dt)
         dt_revision_index += offset
         return self.valid_days[dt_revision_index]
 
-    def history(self, count: int, dt: pd.Timestamp) -> pd.DatetimeIndex:
+    def history(self, dt: pd.Timestamp, count: int) -> pd.DatetimeIndex:
         """
         First we shift the dt to the true
         """
         assert count != 0
+        dt = pd.to_datetime(dt)
         dt_index = self.find(dt)
         return pd.DatetimeIndex(self.valid_days[dt_index-count+1:dt_index+1])
 
@@ -254,16 +257,34 @@ class XSHGExchangeCalendar(object):
         return rlt
     
     @staticmethod
-    def Weekly(trade_dates, days: typing.Iterable[int]):
+    def Weekly(trade_dates=None, days: typing.Iterable[int]=[-1]):
         temp = XSHGExchangeCalendar._create_weekly_groups(trade_dates)
         rebalance_dates = sorted([x[i] for x in temp.values() for i in days])
         return rebalance_dates
     
     @staticmethod
-    def Monthly(trade_dates, days: typing.Iterable[int]):
+    def Monthly(trade_dates=None, days: typing.Iterable[int]=[-1]):
         temp = XSHGExchangeCalendar._create_monthly_groups(trade_dates)
         rebalance_dates = sorted([x[i] for x in temp.values() for i in days])
         return rebalance_dates
+    
+    @staticmethod
+    def MonthlyRebalance(data, days=[-1]):
+        rebalance_dates = XSHGExchangeCalendar.Monthly(data.index)
+        return data.loc[rebalance_dates]
+    
+    @staticmethod
+    def WeeklyRebalance(data, days=[-1]):
+        rebalance_dates = XSHGExchangeCalendar.Weekly(data.index)
+        return data.loc[rebalance_dates] 
+
+    def RangeWeekly(self, start_date, end_date, days: typing.Iterable[int]=[-1]):
+        trade_dates = XSHGExchangeCalendar.sessions_in_range(self, start_date, end_date)
+        return XSHGExchangeCalendar.Weekly(trade_dates, days)
+     
+    def RangeMonthly(self, start_date, end_date, days: typing.Iterable[int]=[-1]):
+        trade_dates = XSHGExchangeCalendar.sessions_in_range(self, start_date, end_date)
+        return XSHGExchangeCalendar.Monthly(trade_dates, days)
     
 
 class DateIterator(object):
@@ -283,6 +304,9 @@ class DateIterator(object):
 
     def __iter__(self):
         return self
+
+
+DEFAULT_CALENDAR = XSHGExchangeCalendar()
 
 
 if __name__ == "__main__":

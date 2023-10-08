@@ -57,4 +57,4 @@ while True:
         break
 
 print(time.time() - t0, "\n")
-print(np.prod(np.array(returns) + 1)) 
+print(np.cumprod(np.array(returns) + 1)) 

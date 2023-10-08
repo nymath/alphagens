@@ -1,11 +1,59 @@
 import pandas as pd
 import numpy as np
 
+def get_clean_factor_and_forward_returns(
+    factor,
+    prices,
+    groupby=None,
+    binning_by_group=False,
+    quantiles=5,
+    bins=None,
+    periods=(1, 5, 20),
+    filter_zscore=20,
+    groupby_labels=None,
+    zero_aware=False,
+    cumulative_returns=True
+):
+    forward_returns = compute_forward_returns(
+        factor,
+        prices,
+        periods,
+        filter_zscore,
+        cumulative_returns,
+    )
+
+    factor_data = get_clean_factor(
+        factor, 
+        forward_returns, 
+        groupby=groupby,
+        groupby_labels=groupby_labels,
+        quantiles=quantiles, 
+        bins=bins,
+        binning_by_group=binning_by_group,
+        zero_aware=zero_aware)
+    return factor_data
+
+
+
+def compute_forward_returns_custom(
+    factor: pd.DataFrame,
+    prices,
+    filter_zscore = None,
+    cumlative_returns = False,
+):
+    factor_dateindex = factor.index.levels[0]
+    factor_dateindex = factor_dateindex.intersection(prices.index)
+
+    if len(factor_dateindex) == 0:
+        raise ValueError("Factor and prices indices don't match")
+    raise NotImplementedError("this function has not been implemented yet")
+
 
 def compute_forward_returns(
     factor: pd.DataFrame,
     prices: pd.DataFrame,
     periods: tuple = (1, ),
+    periods_by_factor: bool = False,
     filter_zscore: float = None,
     cumulative_returns: bool = False
 ) -> pd.DataFrame:
@@ -39,20 +87,29 @@ def compute_forward_returns(
     raw_values_dict = {}
     column_list = []
 
-    for period in sorted(periods):
-        if cumulative_returns:
-            returns = prices.pct_change(period)
-        else:
-            returns = prices.pct_change()
+    if not periods_by_factor:
+        for period in sorted(periods):
+            if cumulative_returns:
+                returns = prices.pct_change(period)
+            else:
+                returns = prices.pct_change()
 
-        forward_returns = returns.shift(-period).reindex(factor_dateindex)
+            forward_returns = returns.shift(-period).reindex(factor_dateindex)
 
-        if filter_zscore is not None:
-            mask = abs(forward_returns - forward_returns.mean()) > (filter_zscore * forward_returns.std())
-            forward_returns[mask] = np.nan
+            if filter_zscore is not None:
+                mask = abs(forward_returns - forward_returns.mean()) > (filter_zscore * forward_returns.std())
+                forward_returns[mask] = np.nan
 
-        label = f"{period}D"
+            label = f"{period}D"
 
+            column_list.append(label)
+
+            raw_values_dict[label] = np.concatenate(forward_returns.values)
+    else:
+        returns = prices.loc[factor_dateindex].pct_change().fillna(0)
+        forward_returns = returns.shift(-1).reindex(factor_dateindex)
+
+        label = "1T"
         column_list.append(label)
 
         raw_values_dict[label] = np.concatenate(forward_returns.values)
@@ -71,6 +128,7 @@ def compute_forward_returns(
 
     df.index.set_names(['date', 'asset'], inplace=True)
     return df
+
 
 def quantize_factor(factor_data,
                     quantiles=5,
@@ -146,15 +204,14 @@ def quantize_factor(factor_data,
                 return pd.concat([pos_bins, neg_bins]).sort_index()
         except Exception as e:
             if _no_raise:
-                return pd.Series(index=x.index)
+                return pd.Series(np.nan, index=x.index)
             raise e
 
     grouper = [factor_data.index.get_level_values('date')]
     if by_group:
         grouper.append('group')
 
-    factor_quantile = factor_data.groupby(grouper)['factor'] \
-        .apply(quantile_calc, quantiles, bins, zero_aware, no_raise)
+    factor_quantile = factor_data.groupby(grouper, group_keys=False)['factor'].apply(quantile_calc, quantiles, bins, zero_aware, no_raise)
     factor_quantile.name = 'factor_quantile'
 
     return factor_quantile.dropna()
@@ -338,12 +395,13 @@ def get_clean_factor(factor,
     # fwdret_amount = float(len(merged_data.index))
 
     # no_raise = False if max_loss == 0 else True
+
     quantile_data = quantize_factor(
         merged_data,
         quantiles,
         bins,
         binning_by_group,
-        no_raise,
+        True,
         zero_aware
     )
 
