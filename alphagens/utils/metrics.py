@@ -1,5 +1,5 @@
 import seaborn as sns
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -76,7 +76,7 @@ class StrategyMetrics:
         tmp['month'] = tmp.index.month
         bb = tmp.pivot_table(tmp, index=tmp["year"], columns=tmp["month"])
         bb.columns.name = None
-        fig, ax = plt.subplots(nrowl=1, ncols=1, figsize=figsize, dpi=dpi)
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=figsize, dpi=dpi)
         ax = sns.heatmap(bb.values, annot=True, cmap="RdYlGn_r", fmt=".2%", linewidths=0.5, linecolor='white', 
                          yticklabels=bb.index, xticklabels=bb.columns, vmin=vlim[0], vmax=vlim[1], ax=ax)
         ax.set_title(title)

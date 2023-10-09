@@ -9,15 +9,19 @@ def get_clean_factor_and_forward_returns(
     quantiles=5,
     bins=None,
     periods=(1, 5, 20),
+    periods_by_factor = False,
     filter_zscore=20,
     groupby_labels=None,
     zero_aware=False,
     cumulative_returns=True
 ):
+    if periods_by_factor:
+        periods = None
     forward_returns = compute_forward_returns(
         factor,
         prices,
         periods,
+        periods_by_factor,
         filter_zscore,
         cumulative_returns,
     )
@@ -76,7 +80,7 @@ def compute_forward_returns(
     -------
     pd.DataFrame
     """
-    factor_dateindex = factor.index.levels[0]
+    factor_dateindex = factor.index.get_level_values(0).unique()
     factor_dateindex = factor_dateindex.intersection(prices.index)
 
     if len(factor_dateindex) == 0:
