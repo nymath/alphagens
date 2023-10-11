@@ -14,25 +14,20 @@ class QuickFactorTestor:
     def evaluate(self, 
         cleaned_factor: pd.DataFrame, 
         type: Literal["long_and_short", "group"]="long_and_short", 
-        rebalance_freq: Literal["Monthly", "Weekly"]="Monthly", 
-        days: Iterable[int]=[-1]
     ):
         """_summary_
 
         Parameters
         ----------
         """
-        assert rebalance_freq in ["Monthly", "Weekly"]
         self._model.reset()
 
         if type == "long_and_short":
             target_positions = self.get_long_short_positions(cleaned_factor)
-            target_positions = getattr(DEFAULT_CALENDAR, f"{rebalance_freq}Rebalance")(target_positions, days)
             return self._model.run_backtest(target_positions)
         elif type == "group":
             n_groups = cleaned_factor["factor_quantile"].max()
             target_positions_list = [self.get_group_positions(cleaned_factor, i+1) for i in range(n_groups)]
-            target_positions_list = [getattr(DEFAULT_CALENDAR, f"{rebalance_freq}Rebalance")(target_positions, days) for target_positions in target_positions_list]   
             return self._model.run_backtests(target_positions_list)
     
     def get_group_positions(self, cleaned_factor: pd.DataFrame, factor_quantile: int):
@@ -63,12 +58,13 @@ class QuickBackTestor:
         self._results = {"strategy_rewards": None}
  
     def run_backtest(self, strategy: pd.DataFrame):
-        if not set(strategy.index).issubset(set(self._trade_dates)):
+        if not set(strategy.loc[self.start_date:self.end_date].index).issubset(set(self._trade_dates)):
             raise ValueError("the index of strategy must be a trade date")
         
         if strategy.isna().sum().sum() > 0:
             raise ValueError("the elements of startegy should not be nan")
         
+        strategy = strategy.loc[self.start_date:self.end_date]
         rebalance_dates = strategy.index.to_list()
         dates = list(zip(rebalance_dates[:-1], rebalance_dates[1:]))
         results = []

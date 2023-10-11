@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import typing
-
+from ..utils.visualization import ColorGenerator
 
 class StrategyMetrics:
 
@@ -62,7 +62,7 @@ class StrategyMetrics:
         return annulized_alpha, beta, annulized_residual_std
 
     @staticmethod
-    def heatmap_of_monthly_returns(
+    def plot_heatmap_of_monthly_returns(
         strategy_returns: pd.Series, 
         figsize: tuple[float] = (12, 10),
         title: str = 'Monthly Returns Heatmap',
@@ -84,7 +84,7 @@ class StrategyMetrics:
         ax.set_ylabel('Year')
         fig.tight_layout()
         return fig, ax
-    
+
     @staticmethod
     def integrated_informations_by_year(
         strategy_returns,
@@ -124,6 +124,20 @@ class FactorMetrics:
             _description_
         """
         pass
+
+    @staticmethod
+    def plot_pnl_by_groups(strategies_pnls: pd.DataFrame, dpi=100):
+        colors = ColorGenerator(5).data
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(12,8), dpi=dpi)
+        for idx, name in enumerate(strategies_pnls.columns):
+            pnl = strategies_pnls[name]
+            ax.plot(pnl, label=f"group_{idx}", color=colors[idx])
+        ax.legend()
+        ax.set_xlabel("Date")
+        ax.set_ylabel("pnl")
+        ax.grid()
+        fig.tight_layout()
+        return fig, ax
 
     @staticmethod
     def cum_ic_series():

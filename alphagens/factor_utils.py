@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import typing
 
 def get_clean_factor_and_forward_returns(
     factor,
@@ -37,6 +38,33 @@ def get_clean_factor_and_forward_returns(
         zero_aware=zero_aware)
     return factor_data
 
+def get_clean_factor_and_current_returns(
+    factor: pd.DataFrame,
+    prices: pd.DataFrame,
+    groupby: typing.Optional[typing.Union[pd.Series, dict]]=None,
+    binning_by_group: bool=False,
+    quantiles: typing.Union[int, typing.Iterable[float]]=5,
+    bins=None,
+    filter_zscore=20,
+    groupby_labels=None,
+    zero_aware=False,
+):
+
+    forward_returns = compute_current_returns(
+        factor,
+        prices,
+    )
+
+    factor_data = get_clean_factor(
+        factor, 
+        forward_returns, 
+        groupby=groupby,
+        groupby_labels=groupby_labels,
+        quantiles=quantiles, 
+        bins=bins,
+        binning_by_group=binning_by_group,
+        zero_aware=zero_aware)
+    return factor_data
 
 
 def compute_forward_returns_custom(
@@ -132,6 +160,60 @@ def compute_forward_returns(
 
     df.index.set_names(['date', 'asset'], inplace=True)
     return df
+
+def compute_forward_returns_custom(
+    factor: pd.DataFrame,
+    prices,
+    filter_zscore = None,
+    cumlative_returns = False,
+):
+    factor_dateindex = factor.index.levels[0]
+    factor_dateindex = factor_dateindex.intersection(prices.index)
+
+    if len(factor_dateindex) == 0:
+        raise ValueError("Factor and prices indices don't match")
+    raise NotImplementedError("this function has not been implemented yet")
+
+
+def compute_current_returns(
+    factor: pd.DataFrame,
+    prices: pd.DataFrame,
+) -> pd.DataFrame:
+
+    factor_dateindex = factor.index.get_level_values(0).unique()
+    factor_dateindex = factor_dateindex.intersection(prices.index)
+
+    if len(factor_dateindex) == 0:
+        raise ValueError("Factor and prices indices don't match: make sure "
+                         "they have the same convention in terms of datetimes "
+                         "and symbol-names")
+
+    raw_values_dict = {}
+    column_list = []
+
+
+    returns = prices.pct_change().reindex(factor_dateindex)
+
+    label = "current_returns"
+
+    column_list.append(label)
+
+    raw_values_dict[label] = np.concatenate(returns.values)
+
+    df = pd.DataFrame.from_dict(raw_values_dict)
+    df.set_index(
+        pd.MultiIndex.from_product(
+            [factor_dateindex, prices.columns],
+            names=['date', 'asset']
+        ),
+        inplace=True
+    )
+    df = df.reindex(factor.index)
+    df = df[column_list]
+    df.index.set_names(['date', 'asset'], inplace=True)
+    return df
+
+
 
 
 def quantize_factor(factor_data,
