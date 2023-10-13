@@ -36,6 +36,7 @@ def get_clean_factor_and_forward_returns(
         bins=bins,
         binning_by_group=binning_by_group,
         zero_aware=zero_aware)
+    factor_data["factor_quantile"] = factor_data["factor_quantile"].astype(int)
     return factor_data
 
 def get_clean_factor_and_current_returns(

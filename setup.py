@@ -27,18 +27,34 @@ def main():
         author="ny",
         author_email="nymath@163.com",
         install_requires=install_requires,
-        description="None",
+        description="An event-driven backtesting system",
         long_description=open('README.md', 'r').read(),
         long_description_content_type="text/markdown",
-        # url="https://github.com/nymath/torchqtm",
-        # download_url="https://github.com/nymath/torchqtm/releases/tag/",
+        url="https://github.com/nymath/alphagens",
+        download_url="https://github.com/nymath/alphagens/releases/tag/v1.0",
         packages=find_packages(),
         classifiers=[
-            "Programming Language :: Python :: 3",
+            # How mature is this project? Common values are
+            #   3 - Alpha
+            #   4 - Beta
+            #   5 - Production/Stable
+            'Development Status :: 3 - Alpha',
+            'Programming Language :: Python :: 3',
             "License :: OSI Approved :: MIT License",
             "Operating System :: Unix",
         ],
+        project_urls={
+            'Documentation': 'https://github.com/nymath/alphagens',
+            # 'Funding': 'https://donate.pypi.org',
+            'Source': 'https://github.com/nymath/alphagens',
+            # 'Tracker': 'https://github.com/pypa/sampleproject/issues',
+        },
         python_requires='>=3.9',
+        entry_points={
+        "console_scripts": [
+            "texgen=alphagens.cli.texgen:main",
+        ]
+        }
     )
 
 

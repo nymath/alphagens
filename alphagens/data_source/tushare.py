@@ -131,8 +131,9 @@ class Stock:
     def moneyflow(symbols, start_date=DEFAULT_START_DATE, end_date=DEFAULT_END_DATE):
         def worker(symbol):
             return get_one_stock_moneyflow(symbol, start_date, end_date)
-            
-        results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(delayed(worker)(symbol) for symbol in symbols)
+
+        works_to_do = [delayed(worker)(symbol) for symbol in symbols] 
+        results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(works_to_do)
         return results
 
     @staticmethod
@@ -150,7 +151,9 @@ class Stock:
         def worker(symbol):
             return ex_get_one_stock(symbol, start_date, end_date)
         
-        results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(delayed(worker)(symbol) for symbol in symbols)
+        works_to_do = [delayed(worker)(symbol) for symbol in symbols]
+
+        results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(works_to_do)
 
         return results
 
@@ -159,8 +162,10 @@ class Stock:
         
         def worker(symbol):
             return get_one_stock(symbol, start_date, end_date)
+
+        works_to_do = [delayed(worker)(symbol) for symbol in symbols] 
         
-        results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(delayed(worker)(symbol) for symbol in symbols)
+        results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(works_to_do)
 
         return results
 
@@ -180,7 +185,6 @@ def index_history(symbols, start_date, end_date):
         return _get_one_index(symbol, start_date, end_date)
     
     results = Parallel(n_jobs=MAX_JOBS, prefer="threads")(delayed(worker)(symbol) for symbol in symbols)
-
     return results
 
 
