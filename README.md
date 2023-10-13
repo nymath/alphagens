@@ -4,6 +4,20 @@
 
 An agent-environment based backtesting framework.
 
+## Event-Driven backtesting 
+-----
+
+```python
+class BuyAndHold(BaseStrategy):
+    def __init__(self, engine, broker, account):
+        super().__init__(engine, broker, account)
+    
+    def before_trading_end(self):
+        if self.current_date == self.trade_dates[0]:
+            self.account.order_target_pct_to(pd.Series(1, index=["000001"]))
+```
+
+
 ## quick start
 
 ----
