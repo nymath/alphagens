@@ -15,6 +15,7 @@ install_requires = [
     'numpy',
     'pandas',
     'pandas_market_calendars',
+    "joblib>=1.2.0"
 ]
 
 
@@ -30,7 +31,6 @@ def main():
         description="An event-driven backtesting system",
         long_description=open('README.md', 'r').read(),
         long_description_content_type="text/markdown",
-        url="https://github.com/nymath/alphagens",
         download_url="https://github.com/nymath/alphagens/releases/tag/v1.0",
         packages=find_packages(),
         classifiers=[
@@ -44,16 +44,18 @@ def main():
             "Operating System :: Unix",
         ],
         project_urls={
+            "Homepage": "https://github.com/nymath/alphagens",
             'Documentation': 'https://github.com/nymath/alphagens',
             # 'Funding': 'https://donate.pypi.org',
+            "Download": "https://github.com/nymath/alphagens/releases/tag/v1.0",
             'Source': 'https://github.com/nymath/alphagens',
             # 'Tracker': 'https://github.com/pypa/sampleproject/issues',
         },
         python_requires='>=3.9',
         entry_points={
-        "console_scripts": [
-            "texgen=alphagens.cli.texgen:main",
-        ]
+            "console_scripts": [
+                "texgen=alphagens.cli.texgen:main",
+            ]
         }
     )
 

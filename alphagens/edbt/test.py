@@ -14,24 +14,24 @@ class Metric:
 class SimulationEngine:
     """模拟市场
     """
-    def __init__(self, trade_dates, data_portal: DataPortal):
-        self._trade_dates = trade_dates
-        self.data_portal = data_portal
+    def __init__(self, trade_dates, data_portal):
+        self.trade_dates: pd.DatetimeIndex = trade_dates
+        self._data_portal = data_portal
         self.iter = iter(trade_dates)
         self.current_date = None
-        self.spot_prices = None
+        self.spot_prices: pd.Series = None
     
     def on_session_start(self):
         self._next()
 
     def _next(self):
         self.current_date = next(self.iter)
-        self.spot_prices = self.data_portal.prices.loc[self.current_date] # 索引改进, 目前会消耗200ms
+        self.spot_prices = self._data_portal.prices.loc[self.current_date] # 索引改进, 目前会消耗200ms
 
 class SimulatedBroker:
     def __init__(self, engine: SimulationEngine):
         self._engine = engine
-        self.limit_up = self._engine.data_portal.get_trading_constraints("limit_up")
+        self.limit_up = self._engine._data_portal.get_trading_constraints("limit_up")
 
     def trading_constraints(self):
         pass
@@ -59,10 +59,15 @@ class SimulatedBroker:
 class Account:
     """统计账户信息
     """
-    def __init__(self, engine):
+    def __init__(self, 
+            engine: SimulationEngine,
+            capital_base: float = 1e6,
+        ):
         self._engine = engine
-        self.positions = pd.Series(0, index=data_portal.universe, dtype=int)
-        self.cash = 100000000
+        self._data_portal = self._engine._data_portal
+        self.positions = pd.Series(0, index=self._data_portal.universe, dtype=int)
+        self.cash = capital_base
+
         self._dirty = True
         self._order_lists = []
         self._filled_order_lists = []
@@ -117,16 +122,17 @@ class Account:
 class BaseStrategy:
     def __init__(self, engine, broker, account):
         self.broker: SimulatedBroker = broker
-        self.engine: SimulationEngine = engine
+        self._engine: SimulationEngine = engine
         self.account: Account = account
+        self.trade_dates = self._engine.trade_dates
 
     @property
     def current_date(self):
-        return self.engine.current_date
+        return self._engine.current_date
     
     @property
     def spot_prices(self):
-        return self.engine.spot_prices
+        return self._engine.spot_prices
     
     def order(self, positions: pd.Series):
         return self.account.order(positions)
@@ -139,10 +145,10 @@ class BaseStrategy:
         self.broker.parser_order(self.account)
 
     def run_backtest(self):
-        with tqdm.tqdm(total=len(Context.trade_dates), desc="") as pbar:
+        with tqdm.tqdm(total=len(self.trade_dates), desc="") as pbar:
             while True:
                 try:
-                    self.engine.on_session_start()
+                    self._engine.on_session_start()
                     self._before_trading_end()
                     self.account.on_session_end()
                 except StopIteration:
@@ -155,10 +161,10 @@ class BuyAndHold(BaseStrategy):
         super().__init__(engine, broker, account)
     
     def before_trading_end(self):
-        if self.current_date == Context.trade_dates[0]:
+        if self.current_date == self.trade_dates[0]:
             self.account.order_target_pct_to(pd.Series(1, index=["000001"]))
 
-engine = SimulationEngine(Context.trade_dates, data_portal)
-broker = SimulatedBroker(engine)
-account = Account(engine)
-algo = BuyAndHold(engine, broker, account)
+# engine = SimulationEngine(Context.trade_dates, data_portal)
+# broker = SimulatedBroker(engine)
+# account = Account(engine)
+# algo = BuyAndHold(engine, broker, account)
