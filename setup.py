@@ -15,7 +15,9 @@ install_requires = [
     'numpy',
     'pandas',
     'pandas_market_calendars',
-    "joblib>=1.2.0"
+    "joblib>=1.2.0",
+    "pyperclip",
+    "tushare"
 ]
 
 

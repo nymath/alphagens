@@ -1,14 +1,17 @@
 import argparse
+import os
+from pathlib import Path
 
 class alphagensClient:
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="Alphagens command line tool")
+
         self.subparsers = self.parser.add_subparsers(dest="command")
-        self.parser.register
+
         # Define the "clear" command
         clear_parser = self.subparsers.add_parser("clear", help="clear the outputs")
-        # Define the "set" command
-        set_parser = self.subparsers.add_parser("set", help="Set something")
+        # Define the "init" command
+        init_parser = self.subparsers.add_parser("init", help="initilize")
         # ... add arguments for set ...
         # Define the "list" command
         list_parser = self.subparsers.add_parser("list", help="List items")
@@ -25,4 +28,17 @@ class alphagensClient:
         
     def run(self):
         args = self.parser.parse_args()
-        pass
+        # Handle the arguments
+        if args.command == "init":
+            self.handle_init(args)
+        else:
+            self.parser.print_help()
+
+    def handle_init(self, args):
+        main_path = os.path.expanduser("~")
+        alphagens_path = os.path.join(main_path, ".alphagens")
+        data_path = os.path.join(alphagens_path, "data")
+        os.mkdir(alphagens_path)
+        os.mkdir(data_path)
+
+

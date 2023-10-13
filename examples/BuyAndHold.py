@@ -5,8 +5,8 @@ import joblib
 import matplotlib.pyplot as plt
 
 from alphagens.utils.calendars import XSHGExchangeCalendar
-from alphagens.env import StockEnv
-from alphagens.agent import BaseAgent
+from alphagens.deprecated.env import StockEnv
+from alphagens.deprecated.agent import BaseAgent
 from alphagens.types import NO_ACTION
 
 
