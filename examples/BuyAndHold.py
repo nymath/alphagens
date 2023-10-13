@@ -4,7 +4,7 @@ import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
 
-from alphagens.calendars import XSHGExchangeCalendar
+from alphagens.utils.calendars import XSHGExchangeCalendar
 from alphagens.env import StockEnv
 from alphagens.agent import BaseAgent
 from alphagens.types import NO_ACTION

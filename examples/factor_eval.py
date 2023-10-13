@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from alphagens.factor_utils import get_clean_factor_and_forward_returns
 from alphagens.data_source.tushare import pro, Stock, Index
-from alphagens.calendars import DEFAULT_CALENDAR
+from alphagens.utils.calendars import DEFAULT_CALENDAR
 from alphagens.backtest import QuickFactorTestor
 import joblib
 import argparse

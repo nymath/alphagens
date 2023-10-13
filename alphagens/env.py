@@ -1,6 +1,6 @@
 import numpy as np
 from .types import NO_ACTION
-from .frame import DataIter
+from .deprecated.frame import DataIter
 from typing import TypeVar, Tuple
 from abc import ABC, ABCMeta, abstractmethod
 from collections import deque

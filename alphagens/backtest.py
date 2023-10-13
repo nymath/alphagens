@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import math
-from .calendars import DEFAULT_CALENDAR
+from .utils.calendars import DEFAULT_CALENDAR
 from typing import Iterable, Literal
 
 

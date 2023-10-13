@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import copy
-from .calendars import XSHGExchangeCalendar
+from ..calendars import XSHGExchangeCalendar
 import os
 import itertools
 import pickle

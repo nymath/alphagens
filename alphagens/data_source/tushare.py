@@ -1,7 +1,7 @@
 import tushare as ts
 import pandas as pd
 from joblib import Parallel, delayed, Memory
-from ..calendars import DEFAULT_CALENDAR
+from ..utils.calendars import DEFAULT_CALENDAR
 
 ts.set_token("4701ef6fe54d814aad7ec2ec77a62c9152a9c3521bde0626c9717470")
 pro = ts.pro_api()
