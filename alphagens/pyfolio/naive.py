@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 
 
 class AbstractPortfolioOptimization(ABC):
-    
+ 
     def __init__(self, n_assets):
         self.solution = None
         self.n_assets = n_assets
